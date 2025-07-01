@@ -33,7 +33,7 @@ void Window::parse_keymap(uint8_t key, uint8_t status) {
       chip8system->key_released = find_key->second;
     }
 
-    chip8system->keys[find_key->second] = status;
+    chip8system->keys.at(find_key->second) = status;
   }
 }
 
@@ -50,6 +50,8 @@ void Window::poll_events() {
       case SDL_EVENT_KEY_UP:
         parse_keymap(event.key.scancode, 0x0);
         break;
+      default:
+        break;
     }
   }
 }
@@ -64,7 +66,7 @@ void Window::draw() {
 
   for (int x = 0; x < 64; x++) {
     for (int y = 0; y < 32; y++) {
-      if (chip8system->display[y * 64 + x] == 1) {
+      if (chip8system->display.at((y * 64) + x) == 1) {
         SDL_RenderPoint(renderer, x, y);
       }
     }

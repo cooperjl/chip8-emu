@@ -12,22 +12,24 @@ Chip8System::Chip8System() {
   std::copy(std::begin(font), std::end(font), std::begin(memory_) + 0x50);
 }
 
-void Chip8System::load_rom(std::string &filename) {  
+void Chip8System::load_rom(std::string &filename) {
+  std::uint16_t const start_idx = 0x200;
+  
   if (std::ifstream file{ filename, std::ios::binary}) {
     std::println("Loading rom from path: {}", filename);
     std::ostringstream buffer;
     buffer << file.rdbuf();
     std::string rom = buffer.str();
 
-    std::copy(std::begin(rom), std::end(rom), std::begin(memory_) + 0x200);
+    std::copy(std::begin(rom), std::end(rom), std::begin(memory_) + start_idx);
   } else {
     throw std::runtime_error(std::string("ERROR: file read went wrong"));
   }
 
-  pc_ = 0x200;
+  pc_ = start_idx;
 }
 
-int Chip8System::decode(Instruction instruction) {
+auto Chip8System::decode(Instruction instruction) -> int {
   switch (instruction.opcode()) {
     case 0x00:
       switch (instruction.nnn()) {
@@ -48,74 +50,74 @@ int Chip8System::decode(Instruction instruction) {
       CALL(instruction.nnn());
       return 0;
     case 0x03:
-      SEQ_VX_NN(instruction.x(), instruction.nn());
+      SEQ_VX_NN(instruction);
       return 0;
     case 0x04:
-      SNE_VX_NN(instruction.x(), instruction.nn());
+      SNE_VX_NN(instruction);
       return 0;
     case 0x05:
-      SEQ_VX_VY(instruction.x(), instruction.y());
+      SEQ_VX_VY(instruction);
       return 0;
     case 0x06:
-      MOV_VX_NN(instruction.x(), instruction.nn());
+      MOV_VX_NN(instruction);
       return 0;
     case 0x07:
-      ADD_VX_NN(instruction.x(), instruction.nn());
+      ADD_VX_NN(instruction);
       return 0;
     case 0x08:
       switch (instruction.n()) {
         case 0x00:
-          MOV_VX_VY(instruction.x(), instruction.y());
+          MOV_VX_VY(instruction);
           return 0;
         case 0x01:
-          OR_VX_VY(instruction.x(), instruction.y());
+          OR_VX_VY(instruction);
           return 0;
         case 0x02:
-          AND_VX_VY(instruction.x(), instruction.y());
+          AND_VX_VY(instruction);
           return 0;
         case 0x03:
-          XOR_VX_VY(instruction.x(), instruction.y());
+          XOR_VX_VY(instruction);
           return 0;
         case 0x04:
-          ADD_VX_VY(instruction.x(), instruction.y());
+          ADD_VX_VY(instruction);
           return 0;
         case 0x05:
-          SUB_VX_VY(instruction.x(), instruction.y());
+          SUB_VX_VY(instruction);
           return 0;
         case 0x06:
-          LSR_VX_VY(instruction.x(), instruction.y());
+          LSR_VX_VY(instruction);
           return 0;
         case 0x07:
-          RSB_VX_VY(instruction.x(), instruction.y());
+          RSB_VX_VY(instruction);
           return 0;
         case 0x0E:
-          LSL_VX_VY(instruction.x(), instruction.y());
+          LSL_VX_VY(instruction);
           return 0;
         default:
           break;
       }
       break;
     case 0x09:
-      SNE_VX_VY(instruction.x(), instruction.y());
+      SNE_VX_VY(instruction);
       return 0;
     case 0x0A:
-      MOV_I_NNN(instruction.nnn());
+      MOV_I_NNN(instruction);
       return 0;
     case 0x0B:
-      JMP_V0_NNN(instruction.nnn());
+      JMP_V0_NNN(instruction);
     case 0x0C:
-      RND_VX_NN(instruction.x(), instruction.nn());      
+      RND_VX_NN(instruction);      
       return 0;
     case 0x0D:
-      DRW(instruction.x(), instruction.y(), instruction.n());
+      DRW(instruction);
       return 0;
     case 0x0E:
       switch (instruction.nn()) {
         case 0x9E:
-          SPK_VX(instruction.x());
+          SPK_VX(instruction);
           return 0;
         case 0xA1:
-          SNK_VX(instruction.x());
+          SNK_VX(instruction);
           return 0;
         default:
           break;
@@ -124,31 +126,31 @@ int Chip8System::decode(Instruction instruction) {
     case 0x0F:
       switch (instruction.nn()) {
         case 0x07:
-          MOV_VX_DT(instruction.x());
+          MOV_VX_DT(instruction);
           return 0;
         case 0x0A:
-          MOV_VX_WAIT_K(instruction.x());
+          MOV_VX_WAIT_K(instruction);
           return 0;
         case 0x15:
-          MOV_DT_VX(instruction.x());
+          MOV_DT_VX(instruction);
           return 0;
         case 0x18:
-          MOV_ST_VX(instruction.x());
+          MOV_ST_VX(instruction);
           return 0;
         case 0x1E:
-          ADD_I_VX(instruction.x());
+          ADD_I_VX(instruction);
           return 0;
         case 0x29:
-          MOV_I_F_VX(instruction.x());
+          MOV_I_F_VX(instruction);
           return 0;
         case 0x33:
-          MOV_I_BCD_VX(instruction.x());
+          MOV_I_BCD_VX(instruction);
           return 0;
         case 0x55:
-          MOV_I_VX(instruction.x());
+          MOV_I_VX(instruction);
           return 0;
         case 0x65:
-          MOV_VX_I(instruction.x());
+          MOV_VX_I(instruction);
           return 0;
         default:
           break;
@@ -158,11 +160,11 @@ int Chip8System::decode(Instruction instruction) {
       break;
   }
   // If here, invalid instruction
-  std::println(stderr, "Error: Invalid (or unimplemented) chip8 instruction: {:04X}", instruction.data);
+  std::println(stderr, "Error: Invalid (or unimplemented) chip8 instruction: {:04X}", instruction.data());
   return -1;
 }
 
-bool Chip8System::update_timers() {
+auto Chip8System::update_timers() -> bool {
   if (dt_ > 0) {
     dt_--;
   }
@@ -171,13 +173,18 @@ bool Chip8System::update_timers() {
   }
   return st_ > 0;
 }
+
+auto Chip8System::get_cur_inst() -> Instruction {                                                                     
+  // Fetch current instruction from memory using value at pc_ and pc_ + 1
+  //Instruction cur_inst {memory_.at(pc_), memory_.at(pc_ + 1)};
+  //return cur_inst;
+  return Instruction { memory_.at(pc_), memory_.at(pc_ + 1) };
+}
   
-int Chip8System::cycle() {
-  // Fetch current instruction from memory
-  Instruction cur_inst = memory_[pc_] << 8 | memory_[pc_ + 1];
+auto Chip8System::cycle() -> int {
+  Instruction cur_inst = get_cur_inst();
   // Increment PC
   pc_ += 2;
   // Decode and execute instruction
   return decode(cur_inst);
 }
-

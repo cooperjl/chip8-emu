@@ -4,12 +4,10 @@
 
 #include "window.h"
 
-int main(int argc, char* argv[]) {
+auto main(int argc, char* argv[]) -> int {
   std::string filename;
   // Right now, only want to get the rom path
   for (int i = 1; i < argc; i++) {
-    std::string cur_arg = argv[i];
-
     if (i == argc - 1) {
       filename = argv[i];
     }

@@ -16,7 +16,7 @@ Beeper::Beeper() {
 
   stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, nullptr, nullptr);
 
-  if (!stream) {
+  if (stream == nullptr) {
     throw std::runtime_error(std::string("ERROR: failed to open audio: ") + SDL_GetError());
   }
 
@@ -26,17 +26,17 @@ Beeper::Beeper() {
 void Beeper::beep() {
   const int minimum_audio = 100;
   if (SDL_GetAudioStreamQueued(stream) < minimum_audio) {
-    for (int i = 0; i < samples.size(); i++) {
+    for (std::uint8_t & sample : samples) {
       // Flatten sine to a square wave
-      float square_phase = std::sin(phase) > 0.0 ? 1.0 : -1.0;
-      samples[i] = amplitude * square_phase + offset;
+      std::int8_t square_phase = std::sin(phase) > 0.0 ? 1 : -1;
+      sample = amplitude * square_phase + offset;
       phase += phase_inc;
     }
     if (phase >= 2.0 * std::numbers::pi) {
       phase -= 2.0 * std::numbers::pi;
     }
 
-    SDL_PutAudioStreamData(stream, samples.data(), samples.size());
+    SDL_PutAudioStreamData(stream, samples.data(), static_cast<int>(samples.size()));
   }
 }
 
