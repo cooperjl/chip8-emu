@@ -1,21 +1,27 @@
+#include "chip8.h"
+
 #include <algorithm>
 #include <array>
-#include <iterator>
+#include <cstddef>
 #include <fstream>
+#include <iterator>
 #include <print>
 #include <sstream>
 
-#include "chip8.h"
-
 Chip8System::Chip8System() {
+  // Reserve max potential size TODO only larger if superchip
+  display.reserve(128 * 64);
+  // Size to base size
+  display.resize(static_cast<size_t>(width * height));
   // read font in
-  std::copy(std::begin(font), std::end(font), std::begin(memory_) + 0x50);
+  std::copy(font.begin(), font.end(), std::begin(memory_));
+  std::copy(big_font.begin(), big_font.end(), std::begin(memory_) + font.size());
 }
 
 void Chip8System::load_rom(std::string &filename) {
   std::uint16_t const start_idx = 0x200;
-  
-  if (std::ifstream file{ filename, std::ios::binary}) {
+
+  if (std::ifstream file{filename, std::ios::binary}) {
     std::println("Loading rom from path: {}", filename);
     std::ostringstream buffer;
     buffer << file.rdbuf();
@@ -32,12 +38,31 @@ void Chip8System::load_rom(std::string &filename) {
 auto Chip8System::decode(Instruction instruction) -> int {
   switch (instruction.opcode()) {
     case 0x00:
-      switch (instruction.nnn()) {
-        case 0x0E0:
+      if (instruction.y() == 0xC) {
+        SCROLL_DOWN_N(instruction);
+        return 0;
+      }
+      switch (instruction.nn()) {
+        case 0xE0:
           CLS();
           return 0;
-        case 0x0EE:
+        case 0xEE:
           RET();
+          return 0;
+        case 0xFB:
+          SCROLL_RIGHT();
+          return 0;
+        case 0xFC:
+          SCROLL_LEFT();
+          return 0;
+        case 0xFD:
+          EXIT();
+          return 0;
+        case 0xFE:
+          LORES();
+          return 0;
+        case 0xFF:
+          HIRES();
           return 0;
         default:
           break;
@@ -106,7 +131,7 @@ auto Chip8System::decode(Instruction instruction) -> int {
     case 0x0B:
       JMP_V0_NNN(instruction);
     case 0x0C:
-      RND_VX_NN(instruction);      
+      RND_VX_NN(instruction);
       return 0;
     case 0x0D:
       DRW(instruction);
@@ -143,6 +168,9 @@ auto Chip8System::decode(Instruction instruction) -> int {
         case 0x29:
           MOV_I_F_VX(instruction);
           return 0;
+        case 0x30:
+          MOV_I_BF_VX(instruction);
+          return 0;
         case 0x33:
           MOV_I_BCD_VX(instruction);
           return 0;
@@ -160,7 +188,9 @@ auto Chip8System::decode(Instruction instruction) -> int {
       break;
   }
   // If here, invalid instruction
-  std::println(stderr, "Error: Invalid (or unimplemented) chip8 instruction: {:04X}", instruction.data());
+  std::println(stderr,
+               "Error: Invalid (or unimplemented) chip8 instruction: {:04X}",
+               instruction.data());
   return -1;
 }
 
@@ -174,13 +204,13 @@ auto Chip8System::update_timers() -> bool {
   return st_ > 0;
 }
 
-auto Chip8System::get_cur_inst() -> Instruction {                                                                     
+auto Chip8System::get_cur_inst() -> Instruction {
   // Fetch current instruction from memory using value at pc_ and pc_ + 1
-  //Instruction cur_inst {memory_.at(pc_), memory_.at(pc_ + 1)};
-  //return cur_inst;
-  return Instruction { memory_.at(pc_), memory_.at(pc_ + 1) };
+  // Instruction cur_inst {memory_.at(pc_), memory_.at(pc_ + 1)};
+  // return cur_inst;
+  return Instruction{memory_.at(pc_), memory_.at(pc_ + 1)};
 }
-  
+
 auto Chip8System::cycle() -> int {
   Instruction cur_inst = get_cur_inst();
   // Increment PC

@@ -1,19 +1,18 @@
-#include "doctest/doctest.h"
+#include "instructions.h"
 
 #include <algorithm>
 
-#include "instructions.h"
 #include "chip8.h"
+#include "doctest/doctest.h"
 
 TEST_CASE("testing the CLS instruction") {
   Chip8System chip8system;
 
-  chip8system.display.fill(0x1);
+  std::fill(chip8system.display.begin(), chip8system.display.end(), 0x1);
   chip8system.CLS();
 
-  CHECK(std::all_of(chip8system.display.begin(), chip8system.display.end(), [](int i) {
-    return i == 0;
-  }));
+  CHECK(std::all_of(chip8system.display.begin(), chip8system.display.end(),
+                    [](int i) { return i == 0; }));
 }
 
 TEST_CASE("testing the JMP instruction") {
@@ -22,7 +21,7 @@ TEST_CASE("testing the JMP instruction") {
   std::uint16_t const nnn = 0x300;
 
   // Full instruction is not required, since we are testing the instruction
-  Instruction instruction{ nnn };
+  Instruction instruction{nnn};
 
   chip8system.JMP(instruction);
 
@@ -34,8 +33,8 @@ TEST_CASE("testing the RET and CALL instructions") {
 
   std::uint16_t const nnn = 0x300;
 
-  Instruction instruction{ nnn };
-  
+  Instruction instruction{nnn};
+
   chip8system.CALL(instruction);
 
   CHECK_EQ(nnn, chip8system.pc());
@@ -52,8 +51,8 @@ TEST_CASE("testing the set and add VX NN instructions") {
   std::uint8_t const nn1 = 0xA0;
   std::uint8_t const nn2 = 0x0A;
 
-  Instruction mov_inst{ nn1 };
-  Instruction add_inst{ nn2 };
+  Instruction mov_inst{nn1};
+  Instruction add_inst{nn2};
 
   chip8system.MOV_VX_NN(mov_inst);
   CHECK_EQ(chip8system.v(x), nn1);
@@ -69,8 +68,8 @@ TEST_CASE("testing the conditional skip instructions") {
   std::uint8_t const nn1 = 0xF0;
   std::uint8_t const nn2 = 0x00;
 
-  Instruction mov_inst{ nn1 };
-  Instruction zero_inst{ nn2 };
+  Instruction mov_inst{nn1};
+  Instruction zero_inst{nn2};
 
   chip8system.MOV_VX_NN(mov_inst);
 
@@ -91,12 +90,12 @@ TEST_CASE("testing the conditional skip instructions") {
 
   SUBCASE("the skip instructions which compare with VY bahave properly") {
     std::uint8_t const y = 0x1;
-    std::uint8_t const a = 0xA; // using register VA for not equal comparisons
+    std::uint8_t const a = 0xA;  // using register VA for not equal comparisons
 
-    Instruction mov_y_inst{ (y << 8) | nn1 };
-    Instruction xy_inst{ (x << 8) | (y << 4) };
-    Instruction xa_inst{ (x << 8) | (a << 4) };
-    
+    Instruction mov_y_inst{(y << 8) | nn1};
+    Instruction xy_inst{(x << 8) | (y << 4)};
+    Instruction xa_inst{(x << 8) | (a << 4)};
+
     chip8system.MOV_VX_NN(mov_y_inst);
 
     // Test that a skip successfully occurs when equal
@@ -119,20 +118,19 @@ TEST_CASE("testing logical and arithmetic (0x8) instructions") {
 
   std::uint8_t const x = 0x0;
   std::uint8_t const y = 0x1;
-  
+
   std::uint8_t const nn1 = 0x0B;
   std::uint8_t const nn2 = 0xB0;
 
-  Instruction mov_x_inst{ nn1 };
-  Instruction mov_y_inst{ (y << 8) | nn2 };
+  Instruction mov_x_inst{nn1};
+  Instruction mov_y_inst{(y << 8) | nn2};
 
   chip8system.MOV_VX_NN(mov_x_inst);
   chip8system.MOV_VX_NN(mov_y_inst);
 
-  Instruction xy_inst{ (x << 8) | (y << 4) };
+  Instruction xy_inst{(x << 8) | (y << 4)};
 
   SUBCASE("the set VX to VY instruction") {
-    
     chip8system.MOV_VX_VY(xy_inst);
     CHECK_EQ(0xB0, chip8system.v(x));
   }
@@ -160,7 +158,6 @@ TEST_CASE("testing logical and arithmetic (0x8) instructions") {
   }
 
   SUBCASE("the subtract instructions") {
-    //chip8system.SUB_VX_VY(x, y);
-    
+    // chip8system.SUB_VX_VY(x, y);
   }
 }

@@ -1,27 +1,36 @@
-#include <memory>
-#include <stdexcept>
+#include "window.h"
 
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_render.h>
 
-#include "window.h"
+#include <SDL3/SDL_stdinc.h>
+#include <memory>
+#include <stdexcept>
+
 #include "beeper.h"
 #include "chip8.h"
 
 Window::Window(std::string &filename) {
   if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
-    throw std::runtime_error(std::string("ERROR: failed to initialise SDL: ") + SDL_GetError());
+    throw std::runtime_error(std::string("ERROR: failed to initialise SDL: ") +
+                             SDL_GetError());
   }
 
-  if (!SDL_CreateWindowAndRenderer("CHIP-8", 640, 320, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE, &window, &renderer)) {
-    throw std::runtime_error(std::string("ERROR: failed to create window and renderer: ") + SDL_GetError());
+  if (!SDL_CreateWindowAndRenderer("CHIP-8", 640, 320,
+                                   SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE,
+                                   &window, &renderer)) {
+    throw std::runtime_error(
+        std::string("ERROR: failed to create window and renderer: ") +
+        SDL_GetError());
   }
 
-  SDL_SetRenderLogicalPresentation(renderer, 64, 32, SDL_LOGICAL_PRESENTATION_INTEGER_SCALE);
+  SDL_SetRenderLogicalPresentation(renderer, 64, 32,
+                                   SDL_LOGICAL_PRESENTATION_INTEGER_SCALE);
 
   beeper = std::make_unique<Beeper>();
 
   chip8system = std::make_unique<Chip8System>();
+  init_callback();
   chip8system->load_rom(filename);
 }
 
@@ -64,17 +73,37 @@ void Window::clear() {
 void Window::draw() {
   SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
 
-  for (int x = 0; x < 64; x++) {
-    for (int y = 0; y < 32; y++) {
-      if (chip8system->display.at((y * 64) + x) == 1) {
+  for (int x = 0; x < chip8system->width; x++) {
+    for (int y = 0; y < chip8system->height; y++) {
+      if (chip8system->display.at((y * chip8system->width) + x) == 1) {
         SDL_RenderPoint(renderer, x, y);
       }
     }
   }
 }
 
-void Window::present() {
-  SDL_RenderPresent(renderer);
+void Window::present() { SDL_RenderPresent(renderer); }
+
+void Window::init_callback() {
+  chip8system->set_callback([this](CallbackType callback_type) {
+    switch (callback_type) {
+      case CallbackType::CHIP8_CALLBACK_EXIT:
+        // Call a quit event to ensure all quit handling is done in the same place.
+        SDL_Event event;
+        SDL_zero(event);
+        event.type = SDL_EVENT_QUIT;
+        SDL_PushEvent(&event);
+        break;
+      case CallbackType::CHIP8_CALLBACK_HIRES:
+        SDL_SetRenderLogicalPresentation(renderer, 128, 64,
+                                         SDL_LOGICAL_PRESENTATION_INTEGER_SCALE);
+        break;
+      case CallbackType::CHIP8_CALLBACK_LORES:
+        SDL_SetRenderLogicalPresentation(renderer, 64, 32,
+                                         SDL_LOGICAL_PRESENTATION_INTEGER_SCALE);
+        break;
+    }
+  });
 }
 
 void Window::main_loop() {
@@ -85,7 +114,7 @@ void Window::main_loop() {
     uint64_t current_time = SDL_GetTicks();
     uint64_t fps_delta = current_time - fps_time;
     uint64_t cycle_delta = current_time - cycle_time;
-    
+
     if (cycle_delta > (1000.0 / 700.0)) {
       chip8system->cycle();
 
