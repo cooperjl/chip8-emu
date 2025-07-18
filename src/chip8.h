@@ -32,6 +32,12 @@ class Chip8System {
  public:
   Chip8System();
 
+  // chip8 internal resolutions
+  static constexpr std::uint8_t lores_width = 64;
+  static constexpr std::uint8_t lores_height = 32;
+  static constexpr std::uint8_t hires_width = 128;
+  static constexpr std::uint8_t hires_height = 64;
+
   //std::array<std::uint8_t, 32 * 64> display = {};
   std::vector<std::uint8_t> display;
 
@@ -39,8 +45,8 @@ class Chip8System {
   std::uint8_t key_released = 0xFF;
   bool waiting = false;
 
-  std::uint8_t width = 64;
-  std::uint8_t height = 32;
+  std::uint8_t width = lores_width;
+  std::uint8_t height = lores_height;
 
   // public interface for internal state for debugging and testing
   [[nodiscard]] auto pc() const -> std::uint16_t {

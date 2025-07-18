@@ -1,11 +1,11 @@
 #include "window.h"
 
-#include <SDL3/SDL_events.h>
-#include <SDL3/SDL_render.h>
-
-#include <SDL3/SDL_stdinc.h>
+#include <chrono>
 #include <memory>
 #include <stdexcept>
+
+#include <SDL3/SDL_events.h>
+#include <SDL3/SDL_render.h>
 
 #include "beeper.h"
 #include "chip8.h"
@@ -107,21 +107,30 @@ void Window::init_callback() {
 }
 
 void Window::main_loop() {
-  uint64_t fps_time = SDL_GetTicks();
-  uint64_t cycle_time = SDL_GetTicks();
+  using namespace std::chrono;
+
+  auto current_time = system_clock::now();
+  auto fps_time = current_time;
+  auto cycle_time = current_time;
 
   while (running) {
-    uint64_t current_time = SDL_GetTicks();
-    uint64_t fps_delta = current_time - fps_time;
-    uint64_t cycle_delta = current_time - cycle_time;
+    current_time = system_clock::now();
 
-    if (cycle_delta > (1000.0 / 700.0)) {
+    // Target fps to reach the expected 60hz for chip8
+    static constexpr double fps = 60;
+    // Tickrate at standard default for now, to be configured game by game
+    static constexpr double tickrate = 15.0;
+
+    static constexpr auto fps_step = round<system_clock::duration>(duration<double>{1.0 / fps});
+    static constexpr auto cycle_step = round<system_clock::duration>(duration<double>{1.0 / (fps * tickrate)});
+
+    if (current_time > cycle_time + cycle_step) {
       chip8system->cycle();
 
       cycle_time = current_time;
     }
 
-    if (fps_delta > (1000.0 / 60.0)) {
+    if (current_time > fps_time + fps_step) {
       if (chip8system->update_timers()) {
         beeper->beep();
       }

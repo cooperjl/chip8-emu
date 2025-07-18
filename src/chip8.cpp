@@ -11,15 +11,14 @@
 #include "config.h"
 
 Chip8System::Chip8System() {
-  // Reserve max potential size TODO only larger if superchip
-  display.reserve(128 * 64);
+  Config::load_schip();
+
+  display.reserve(static_cast<size_t>(Config::max_width * Config::max_height));
   // Size to base size
-  display.resize(static_cast<size_t>(width * height));
-  // read font in
+  display.resize(static_cast<size_t>(lores_width * lores_height));
+  // read fonts in
   std::copy(font.begin(), font.end(), std::begin(memory_));
   std::copy(big_font.begin(), big_font.end(), std::begin(memory_) + font.size());
-
-  Config::load_schip();
 }
 
 void Chip8System::load_rom(std::string &filename) {
@@ -210,8 +209,6 @@ auto Chip8System::update_timers() -> bool {
 
 auto Chip8System::get_cur_inst() -> Instruction {
   // Fetch current instruction from memory using value at pc_ and pc_ + 1
-  // Instruction cur_inst {memory_.at(pc_), memory_.at(pc_ + 1)};
-  // return cur_inst;
   return Instruction{memory_.at(pc_), memory_.at(pc_ + 1)};
 }
 
