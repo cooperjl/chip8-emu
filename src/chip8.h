@@ -19,11 +19,11 @@ enum class CallbackType {
 class Chip8System {
   // chip8 machine
   std::array<std::uint8_t, 4096> memory_ = {};
-  std::uint16_t pc_ = 0;  // program counter
-  std::uint16_t i_ = 0;   // index register
-  std::stack<std::uint16_t> stack_;
-  std::uint8_t dt_ = 0;                  // delay_timer
-  std::uint8_t st_ = 0;                  // sound_timer
+  std::uint16_t pc_ = 0;                 // program counter
+  std::uint16_t i_ = 0;                  // index register
+  std::stack<std::uint16_t> stack_;      // stack
+  std::uint8_t dt_ = 0;                  // delay timer
+  std::uint8_t st_ = 0;                  // sound timer
   std::array<std::uint8_t, 16> v_ = {};  // registers
 
   using CallbackFunction = std::function<void(CallbackType callback_type)>;
@@ -94,7 +94,7 @@ class Chip8System {
   // 0x9-0xD Instructions
   void SNE_VX_VY(Instruction instruction);   // 9XY0
   void MOV_I_NNN(Instruction instruction);   // ANNN
-  void JMP_V0_NNN(Instruction instruction);  // BNNN
+  void JMP_VX_NNN(Instruction instruction);  // BNNN / BXNN
   void RND_VX_NN(Instruction instruction);   // CNNN
   void DRW(Instruction instruction);         // DXYN
   // 0xE Instructions

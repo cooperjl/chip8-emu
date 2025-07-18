@@ -8,6 +8,8 @@
 #include <print>
 #include <sstream>
 
+#include "config.h"
+
 Chip8System::Chip8System() {
   // Reserve max potential size TODO only larger if superchip
   display.reserve(128 * 64);
@@ -16,6 +18,8 @@ Chip8System::Chip8System() {
   // read font in
   std::copy(font.begin(), font.end(), std::begin(memory_));
   std::copy(big_font.begin(), big_font.end(), std::begin(memory_) + font.size());
+
+  Config::load_schip();
 }
 
 void Chip8System::load_rom(std::string &filename) {
@@ -129,7 +133,7 @@ auto Chip8System::decode(Instruction instruction) -> int {
       MOV_I_NNN(instruction);
       return 0;
     case 0x0B:
-      JMP_V0_NNN(instruction);
+      JMP_VX_NNN(instruction);
     case 0x0C:
       RND_VX_NN(instruction);
       return 0;

@@ -5,6 +5,7 @@
 #include <print>
 #include <random>
 
+#include "config.h"
 #include "chip8.h"
 
 static std::random_device r;
@@ -166,8 +167,9 @@ void Chip8System::SUB_VX_VY(Instruction instruction) {
 }
 
 void Chip8System::LSR_VX_VY(Instruction instruction) {
-  v_.at(instruction.x()) =
-      v_.at(instruction.y());  // Separate to allow configurability with quirks
+  if (!Config::shift_quirk) {
+    v_.at(instruction.x()) = v_.at(instruction.y());
+  }
 
   uint8_t vx = v_.at(instruction.x());
 
@@ -186,8 +188,9 @@ void Chip8System::RSB_VX_VY(Instruction instruction) {
 }
 
 void Chip8System::LSL_VX_VY(Instruction instruction) {
-  v_.at(instruction.x()) =
-      v_.at(instruction.y());  // Separate to allow configurability with quirks
+  if (!Config::shift_quirk) {
+    v_.at(instruction.x()) = v_.at(instruction.y());
+  }
 
   uint8_t vx = v_.at(instruction.x());
 
@@ -203,8 +206,12 @@ void Chip8System::SNE_VX_VY(Instruction instruction) {
 
 void Chip8System::MOV_I_NNN(Instruction instruction) { i_ = instruction.nnn(); }
 
-void Chip8System::JMP_V0_NNN(Instruction instruction) {
-  pc_ = v_[0x0] + instruction.nnn();
+void Chip8System::JMP_VX_NNN(Instruction instruction) {
+  if (Config::jump_quirk) {
+    pc_ = instruction.nnn() + v_.at(instruction.x());
+  } else {
+    pc_ = instruction.nnn() + v_.at(0x0);
+  }
 }
 
 void Chip8System::RND_VX_NN(Instruction instruction) {
@@ -283,7 +290,6 @@ void Chip8System::MOV_ST_VX(Instruction instruction) {
 }
 
 void Chip8System::ADD_I_VX(Instruction instruction) {
-  // TODO: overflow flag quirk
   i_ += v_.at(instruction.x());
 }
 
@@ -307,14 +313,18 @@ void Chip8System::MOV_I_VX(Instruction instruction) {
   for (std::uint8_t idx = 0; idx <= instruction.x(); idx++) {
     memory_.at(i_ + idx) = v_.at(idx);
   }
-  // quirk
-  i_ = instruction.x() + 1;
+
+  if (!Config::memory_quirk) {
+    i_ = instruction.x() + 1;
+  }
 }
 
 void Chip8System::MOV_VX_I(Instruction instruction) {
   for (std::uint8_t idx = 0; idx <= instruction.x(); idx++) {
     v_.at(idx) = memory_.at(i_ + idx);
   }
-  // quirk
-  i_ = instruction.x() + 1;
+
+  if (!Config::memory_quirk) {
+    i_ = instruction.x() + 1;
+  }
 }

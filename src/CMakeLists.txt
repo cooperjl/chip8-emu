@@ -8,7 +8,8 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(SDL3)
 
-set(SOURCES instructions.cpp
+set(SOURCES config.cpp
+            instructions.cpp
             chip8.cpp
             beeper.cpp
             window.cpp
