@@ -8,29 +8,29 @@
 #include <memory>
 #include <unordered_map>
 
-#include "beeper.h"
-#include "chip8.h"
+#include "Beeper.h"
+#include "Chip8Emulator.h"
 
 class Window {
   SDL_Window *window = nullptr;
   SDL_Renderer *renderer = nullptr;
 
   std::unique_ptr<Beeper> beeper;
-  std::unique_ptr<Chip8System> chip8system;
+  std::unique_ptr<Chip8Emulator> chip8system;
 
-  void parse_keymap(uint8_t key, uint8_t status);
+  void parse_keymap(uint8_t key, uint8_t status) const;
 
  public:
   bool running = true;
 
   Window(std::string &filename);
 
-  void init_callback();
+  void init_callback() const;
   void main_loop();
   void poll_events();
-  void clear();
-  void draw();
-  void present();
+  void clear() const;
+  void draw() const;
+  void present() const;
 
   ~Window();
 };

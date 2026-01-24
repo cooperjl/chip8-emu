@@ -2,18 +2,21 @@
 #include <filesystem>
 #include <print>
 
-#include "window.h"
+#include "Window.h"
 
-auto main(int argc, char* argv[]) -> int {
+int main(int argc, char* argv[]) {
   std::string filename;
   // Right now, only want to get the rom path
-  for (int i = 1; i < argc; i++) {
-    if (i == argc - 1) {
+  for (int i = 1; i < argc; i++)
+  {
+    if (i == argc - 1)
+    {
       filename = argv[i];
     }
   }
 
-  if (!std::filesystem::exists(filename)) {
+  if (!std::filesystem::exists(filename))
+  {
     std::println(stderr, "Error: file not found at path: {}", filename);
 
     return EXIT_FAILURE;

@@ -1,4 +1,4 @@
-#include "beeper.h"
+#include "Beeper.h"
 
 #include <SDL3/SDL_audio.h>
 #include <SDL3/SDL_error.h>

@@ -1,4 +1,4 @@
-#include "window.h"
+#include "Window.h"
 
 #include <chrono>
 #include <memory>
@@ -7,8 +7,8 @@
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_render.h>
 
-#include "beeper.h"
-#include "chip8.h"
+#include "Beeper.h"
+#include "Chip8Emulator.h"
 
 Window::Window(std::string &filename) {
   if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
@@ -29,24 +29,26 @@ Window::Window(std::string &filename) {
 
   beeper = std::make_unique<Beeper>();
 
-  chip8system = std::make_unique<Chip8System>();
+  chip8system = std::make_unique<Chip8Emulator>();
   init_callback();
-  chip8system->load_rom(filename);
+  chip8system->loadRom(filename);
 }
 
-void Window::parse_keymap(uint8_t key, uint8_t status) {
+void Window::parse_keymap(const uint8_t key, const uint8_t status) const
+{
   auto find_key = keymap.find(key);
   if (find_key != keymap.end()) {
     // For waiting
-    if (chip8system->waiting && status == 0x0) {
-      chip8system->key_released = find_key->second;
+    if (chip8system->system.waiting && status == 0x0) {
+      chip8system->system.key_released = find_key->second;
     }
 
-    chip8system->keys.at(find_key->second) = status;
+    chip8system->system.keys.at(find_key->second) = status;
   }
 }
 
-void Window::poll_events() {
+void Window::poll_events()
+{
   SDL_Event event;
   while (SDL_PollEvent(&event)) {
     switch (event.type) {
@@ -65,27 +67,30 @@ void Window::poll_events() {
   }
 }
 
-void Window::clear() {
+void Window::clear() const
+{
   SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
   SDL_RenderClear(renderer);
 }
 
-void Window::draw() {
+void Window::draw() const
+{
   SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
 
-  for (int x = 0; x < chip8system->width; x++) {
-    for (int y = 0; y < chip8system->height; y++) {
-      if (chip8system->display.at((y * chip8system->width) + x) == 1) {
+  for (int x = 0; x < chip8system->system.current_width; x++) {
+    for (int y = 0; y < chip8system->system.current_height; y++) {
+      if (chip8system->system.display.at((y * chip8system->system.current_width) + x) == 1) {
         SDL_RenderPoint(renderer, x, y);
       }
     }
   }
 }
 
-void Window::present() { SDL_RenderPresent(renderer); }
+void Window::present() const { SDL_RenderPresent(renderer); }
 
-void Window::init_callback() {
-  chip8system->set_callback([this](CallbackType callback_type) {
+void Window::init_callback() const
+{
+  chip8system->system.set_callback([this](CallbackType callback_type) {
     switch (callback_type) {
       case CallbackType::CHIP8_CALLBACK_EXIT:
         // Call a quit event to ensure all quit handling is done in the same place.
@@ -131,7 +136,7 @@ void Window::main_loop() {
     }
 
     if (current_time > fps_time + fps_step) {
-      if (chip8system->update_timers()) {
+      if (chip8system->updateTimers()) {
         beeper->beep();
       }
 

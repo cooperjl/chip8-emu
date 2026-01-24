@@ -1,16 +1,16 @@
-#include "config.h"
+#include "Config.h"
 
 #include <cstdint>
 
-#include "chip8.h"
+#include "Chip8System.h"
 
 bool Config::shift_quirk = false;
 bool Config::jump_quirk = false;
 bool Config::memory_quirk = false;
 bool Config::vblank_quirk = false;
 
-std::uint8_t Config::max_width = Chip8System::hires_width;
-std::uint8_t Config::max_height = Chip8System::hires_height;
+std::uint8_t Config::max_width = Chip8System::HIRES_WIDTH;
+std::uint8_t Config::max_height = Chip8System::HIRES_HEIGHT;
 
 void Config::load_chip8() {
   shift_quirk = false;
@@ -18,8 +18,8 @@ void Config::load_chip8() {
   memory_quirk = false;
   vblank_quirk = false;
 
-  max_width = Chip8System::lores_width;
-  max_height = Chip8System::lores_height;
+  max_width = Chip8System::LORES_WIDTH;
+  max_height = Chip8System::LORES_HEIGHT;
 }
 
 void Config::load_schip() {
@@ -28,8 +28,8 @@ void Config::load_schip() {
   memory_quirk = true;
   vblank_quirk = true;
 
-  max_width = Chip8System::hires_width;
-  max_height = Chip8System::hires_height;
+  max_width = Chip8System::HIRES_WIDTH;
+  max_height = Chip8System::HIRES_HEIGHT;
 }
 
 void Config::load_xochip() {
