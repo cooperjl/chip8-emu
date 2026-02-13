@@ -3,66 +3,55 @@
 
 #include <cstdint>
 
-class Instruction
-{
-  std::uint16_t data;
+class Instruction {
+    std::uint16_t data;
 
- public:
-  Instruction(std::uint16_t const instruction) : data{instruction}{}
-  Instruction(std::uint8_t const inst_upper, std::uint8_t const inst_lower): data
-  {
-    static_cast<std::uint16_t>(inst_upper << 8 | inst_lower)
-  }{}
+public:
+    Instruction(std::uint16_t const instruction) : data{instruction} {}
 
-  [[nodiscard]] auto raw_data() const -> std::uint16_t
-  {
-     return data;
-  }
+    Instruction(std::uint8_t const inst_upper, std::uint8_t const inst_lower)
+        : data{static_cast<std::uint16_t>(inst_upper << 8 | inst_lower)} {}
 
-  [[nodiscard]] auto opcode() const -> std::uint8_t
-  {
-    constexpr std::uint16_t MASK { 0xF000 };
-    constexpr std::uint8_t SHIFT{ 12 };
+    [[nodiscard]] std::uint16_t raw_data() const { return data; }
 
-    return ((data & MASK) >> SHIFT);
-  }
+    [[nodiscard]] std::uint8_t opcode() const {
+        constexpr std::uint16_t MASK{0xF000};
+        constexpr std::uint8_t SHIFT{12};
 
-  [[nodiscard]] auto x() const -> std::uint8_t
-  {
-    constexpr std::uint16_t MASK{ 0x0F00 };
-    constexpr std::uint8_t SHIFT{ 8 };
+        return ((data & MASK) >> SHIFT);
+    }
 
-    return ((data & MASK) >> SHIFT);
-  }
+    [[nodiscard]] std::uint8_t x() const {
+        constexpr std::uint16_t MASK{0x0F00};
+        constexpr std::uint8_t SHIFT{8};
 
-  [[nodiscard]] auto y() const -> std::uint8_t
-  {
-    constexpr std::uint16_t MASK{ 0x00F0 };
-    constexpr std::uint16_t SHIFT{ 4 };
+        return ((data & MASK) >> SHIFT);
+    }
 
-    return ((data & MASK) >> SHIFT);
-  }
+    [[nodiscard]] std::uint8_t y() const {
+        constexpr std::uint16_t MASK{0x00F0};
+        constexpr std::uint16_t SHIFT{4};
 
-  [[nodiscard]] auto n() const -> std::uint8_t
-  {
-    constexpr std::uint16_t MASK{ 0x000F };
+        return ((data & MASK) >> SHIFT);
+    }
 
-    return (data & MASK);
-  }
+    [[nodiscard]] std::uint8_t n() const {
+        constexpr std::uint16_t MASK{0x000F};
 
-  [[nodiscard]] auto nn() const -> std::uint8_t
-  {
-    constexpr std::uint16_t MASK{ 0x00FF };
+        return (data & MASK);
+    }
 
-    return (data & MASK);
-  }
+    [[nodiscard]] std::uint8_t nn() const {
+        constexpr std::uint16_t MASK{0x00FF};
 
-  [[nodiscard]] auto nnn() const -> std::uint16_t
-  {
-    constexpr std::uint16_t MASK{ 0x0FFF };
+        return (data & MASK);
+    }
 
-    return (data & MASK);
-  }
+    [[nodiscard]] std::uint16_t nnn() const {
+        constexpr std::uint16_t MASK{0x0FFF};
+
+        return (data & MASK);
+    }
 };
 
-#endif
+#endif // INSTRUCTION_H
