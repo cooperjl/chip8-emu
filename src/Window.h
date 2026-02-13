@@ -2,8 +2,6 @@
 #define WINDOW_H
 
 #include <SDL3/SDL.h>
-#include <SDL3/SDL_audio.h>
-#include <SDL3/SDL_init.h>
 
 #include <memory>
 #include <unordered_map>
@@ -23,7 +21,7 @@ class Window {
  public:
   bool running = true;
 
-  Window(std::string &filename);
+  Window(std::string_view filename);
 
   void init_callback() const;
   void main_loop();

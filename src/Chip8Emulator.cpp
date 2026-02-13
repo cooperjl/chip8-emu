@@ -1,5 +1,7 @@
 #include "Chip8Emulator.h"
 
+#include "Chip8InstructionSet.h"
+
 #include <algorithm>
 #include <array>
 #include <format>
@@ -7,8 +9,9 @@
 #include <iterator>
 #include <print>
 #include <sstream>
-#include <unordered_map>
+#include <stdexcept>
 
+#include "Chip8System.h"
 #include "Config.h"
 #include "Instruction.h"
 
@@ -24,47 +27,33 @@ Chip8Emulator::Chip8Emulator()
   std::ranges::copy(BIG_FONT, std::begin(system.memory) + FONT.size());
 }
 
-void Chip8Emulator::decodeInstruction(Instruction instruction)
+/** @brief Primary instruction decoding switch case. */
+void Chip8Emulator::decodeInstruction(Instruction const instruction)
 {
-  for (auto [mask, value, execute] : DECODE_TABLE)
+  for (auto const& row : DECODE_TABLE)
   {
-    if ((instruction.raw_data() & mask) == value)
+    if (row.matches(instruction))
     {
-      std::visit([this, instruction](auto&& instructionFunction)
-      {
-        using T = std::decay_t<decltype(instructionFunction)>;
-        if constexpr (std::is_same_v<T, Chip8Function>)
-        {
-            instructionFunction(system);
-        } else if constexpr (std::is_same_v<T, Chip8InstructionFunction>)
-        {
-            instructionFunction(system, instruction);
-        }
-        else
-        {
-          throw std::runtime_error("Error: unable to properly call instruction");
-        }
-      }, execute);
-
+      (system.*row.execute)(instruction);
       return;
     }
   }
 
-  const std::string errorString
+  std::string const errorString
   {
     std::format(
-      "Error: Invalid (or unimplemented) chip8 instruction: {:04X}",
+      "Error: Invalid (or unimplemented) chip8 instruction: 0x{:04X}",
       instruction.raw_data())
   };
 
-  throw std::runtime_error(errorString);
+  throw std::runtime_error{ errorString };
 }
 
-void Chip8Emulator::loadRom(std::string &filename)
+void Chip8Emulator::loadRom(std::string_view filename)
 {
   constexpr std::uint16_t START_IDX{ 0x200 };
 
-  if (std::ifstream file{filename, std::ios::binary})
+  if (std::ifstream file{ filename.data(), std::ios::binary })
   {
     std::println("Loading rom from path: {}", filename);
     std::ostringstream buffer;
@@ -75,7 +64,7 @@ void Chip8Emulator::loadRom(std::string &filename)
   }
   else
   {
-    throw std::runtime_error(std::string("ERROR: file read went wrong"));
+    throw std::runtime_error(std::string("Error: file read went wrong"));
   }
 
   system.program_counter = START_IDX;

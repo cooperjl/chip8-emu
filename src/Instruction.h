@@ -8,8 +8,8 @@ class Instruction
   std::uint16_t data;
 
  public:
-  Instruction(std::uint16_t instruction) : data{instruction}{}
-  Instruction(std::uint8_t inst_upper, std::uint8_t inst_lower): data
+  Instruction(std::uint16_t const instruction) : data{instruction}{}
+  Instruction(std::uint8_t const inst_upper, std::uint8_t const inst_lower): data
   {
     static_cast<std::uint16_t>(inst_upper << 8 | inst_lower)
   }{}

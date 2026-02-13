@@ -10,7 +10,7 @@
 #include "Beeper.h"
 #include "Chip8Emulator.h"
 
-Window::Window(std::string &filename) {
+Window::Window(std::string_view const filename) {
   if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
     throw std::runtime_error(std::string("ERROR: failed to initialise SDL: ") +
                              SDL_GetError());
@@ -34,7 +34,7 @@ Window::Window(std::string &filename) {
   chip8system->loadRom(filename);
 }
 
-void Window::parse_keymap(const uint8_t key, const uint8_t status) const
+void Window::parse_keymap(std::uint8_t const key, std::uint8_t const status) const
 {
   auto find_key = keymap.find(key);
   if (find_key != keymap.end()) {
@@ -90,7 +90,7 @@ void Window::present() const { SDL_RenderPresent(renderer); }
 
 void Window::init_callback() const
 {
-  chip8system->system.set_callback([this](CallbackType callback_type) {
+  chip8system->system.set_callback([this](CallbackType const callback_type) {
     switch (callback_type) {
       case CallbackType::CHIP8_CALLBACK_EXIT:
         // Call a quit event to ensure all quit handling is done in the same place.
@@ -122,20 +122,20 @@ void Window::main_loop() {
     current_time = system_clock::now();
 
     // Target fps to reach the expected 60hz for chip8
-    static constexpr double fps = 60;
-    // Tickrate at standard default for now, to be configured game by game
-    static constexpr double tickrate = 15.0;
+    static constexpr double FPS{ 60 };
+    // Tick rate at standard default for now, to be configured game by game
+    static constexpr double TICK_RATE{ 15.0 };
 
-    static constexpr auto fps_step = round<system_clock::duration>(duration<double>{1.0 / fps});
-    static constexpr auto cycle_step = round<system_clock::duration>(duration<double>{1.0 / (fps * tickrate)});
+    static constexpr auto FPS_STEP{ round<system_clock::duration>(duration<double>{1.0 / FPS}) };
+    static constexpr auto CYCLE_STEP{ round<system_clock::duration>(duration<double>{1.0 / (FPS * TICK_RATE)}) };
 
-    if (current_time > cycle_time + cycle_step) {
+    if (current_time > cycle_time + CYCLE_STEP) {
       chip8system->cycle();
 
       cycle_time = current_time;
     }
 
-    if (current_time > fps_time + fps_step) {
+    if (current_time > fps_time + FPS_STEP) {
       if (chip8system->updateTimers()) {
         beeper->beep();
       }

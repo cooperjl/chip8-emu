@@ -1,11 +1,12 @@
 #ifndef CHIP8_SYSTEM_H
 #define CHIP8_SYSTEM_H
 
+#include "Instruction.h"
+
 #include <array>
-#include <cstdint>
+#include <functional>
 #include <stack>
 #include <vector>
-#include <functional>
 
 enum class CallbackType : std::uint8_t
 {
@@ -14,8 +15,11 @@ enum class CallbackType : std::uint8_t
   CHIP8_CALLBACK_HIRES,
 };
 
-struct Chip8System
+class Chip8System
 {
+public:
+  Chip8System() = default;
+
   static constexpr std::uint16_t MEMORY_SIZE    { 4096 };
   static constexpr std::uint8_t  REGISTER_COUNT {   16 };
   static constexpr std::uint8_t  NUM_KEYS       { 0x10 };
@@ -50,6 +54,48 @@ struct Chip8System
   void set_callback(CallbackFunction callback_function) {
     this->callback_function = callback_function;
   }
+
+  void sc_down(Instruction instruction) noexcept;
+  void cls(Instruction instruction) noexcept;
+  void ret(Instruction instruction) noexcept;
+  void sc_right(Instruction instruction) noexcept;
+  void sc_left(Instruction instruction) noexcept;
+  void exit(Instruction instruction) noexcept;
+  void lores(Instruction instruction) noexcept;
+  void hires(Instruction instruction) noexcept;
+  void jmp(Instruction instruction) noexcept;
+  void call(Instruction instruction) noexcept;
+  void seq_vx_nn(Instruction instruction) noexcept;
+  void sne_vx_nn(Instruction instruction) noexcept;
+  void seq_vx_vy(Instruction instruction) noexcept;
+  void mov_vx_nn(Instruction instruction) noexcept;
+  void add_vx_nn(Instruction instruction) noexcept;
+  void mov_vx_vy(Instruction instruction) noexcept;
+  void or_vx_vy(Instruction instruction) noexcept;
+  void and_vx_vy(Instruction instruction) noexcept;
+  void xor_vx_vy(Instruction instruction) noexcept;
+  void add_vx_vy(Instruction instruction) noexcept;
+  void sub_vx_vy(Instruction instruction) noexcept;
+  void shr_vx_vy(Instruction instruction) noexcept;
+  void rsb_vx_vy(Instruction instruction) noexcept;
+  void shl_vx_vy(Instruction instruction) noexcept;
+  void sne_vx_vy(Instruction instruction) noexcept;
+  void mov_i_nnn(Instruction instruction) noexcept;
+  void jmp_vx_nnn(Instruction instruction) noexcept;
+  void rnd_vx_nn(Instruction instruction) noexcept;
+  void drw(Instruction instruction) noexcept;
+  void spr_vx(Instruction instruction) noexcept;
+  void sup_vx(Instruction instruction) noexcept;
+  void mov_vx_dt(Instruction instruction) noexcept;
+  void wait_mov_vx_key(Instruction instruction) noexcept;
+  void mov_dt_vx(Instruction instruction) noexcept;
+  void mov_st_vx(Instruction instruction) noexcept;
+  void add_i_vx(Instruction instruction) noexcept;
+  void mov_i_font_vx(Instruction instruction) noexcept;
+  void mov_i_bfont_vx(Instruction instruction) noexcept;
+  void mov_i_bcd_vx(Instruction instruction) noexcept;
+  void mov_i_vx(Instruction instruction) noexcept;
+  void mov_vx_i(Instruction instruction) noexcept;
 };
 
-#endif
+#endif // CHIP8_SYSTEM_H

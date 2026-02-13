@@ -4,72 +4,59 @@
 #include <array>
 #include <climits>
 #include <cstdint>
-#include <functional>
 #include <stack>
-#include <unordered_map>
 
-#include "Chip8Instructions.h"
+#include "Chip8System.h"
 #include "Instruction.h"
-
-using Chip8Function = std::function<void(Chip8System&)>;
-using Chip8InstructionFunction = std::function<void(Chip8System&, Instruction)>;
-
-using Chip8FunctionVariant = std::variant<Chip8Function, Chip8InstructionFunction>;
-
-struct OpcodeRow
-{
-    uint16_t mask;
-    uint16_t value;
-    Chip8FunctionVariant execute;
-};
-
-const std::array<OpcodeRow, 41> DECODE_TABLE
-{{
-  { .mask=0xFFF0, .value=0x00C0, .execute=Chip8Instructions::sc_down },
-  { .mask=0xFFFF, .value=0x00E0, .execute=Chip8Instructions::cls },
-  { .mask=0xFFFF, .value=0x00EE, .execute=Chip8Instructions::ret },
-  { .mask=0xFFFF, .value=0x00FB, .execute=Chip8Instructions::sc_right },
-  { .mask=0xFFFF, .value=0x00FC, .execute=Chip8Instructions::sc_left },
-  { .mask=0xFFFF, .value=0x00FD, .execute=Chip8Instructions::exit },
-  { .mask=0xFFFF, .value=0x00FE, .execute=Chip8Instructions::lores },
-  { .mask=0xFFFF, .value=0x00FF, .execute=Chip8Instructions::hires },
-  { .mask=0xF000, .value=0x1000, .execute=Chip8Instructions::jmp },
-  { .mask=0xF000, .value=0x2000, .execute=Chip8Instructions::call },
-  { .mask=0xF000, .value=0x3000, .execute=Chip8Instructions::seq_vx_nn },
-  { .mask=0xF000, .value=0x4000, .execute=Chip8Instructions::sne_vx_nn },
-  { .mask=0xF000, .value=0x5000, .execute=Chip8Instructions::seq_vx_vy },
-  { .mask=0xF000, .value=0x6000, .execute=Chip8Instructions::mov_vx_nn },
-  { .mask=0xF000, .value=0x7000, .execute=Chip8Instructions::add_vx_nn },
-  { .mask=0xF00F, .value=0x8000, .execute=Chip8Instructions::mov_vx_vy },
-  { .mask=0xF00F, .value=0x8001, .execute=Chip8Instructions::or_vx_vy },
-  { .mask=0xF00F, .value=0x8002, .execute=Chip8Instructions::and_vx_vy },
-  { .mask=0xF00F, .value=0x8003, .execute=Chip8Instructions::xor_vx_vy },
-  { .mask=0xF00F, .value=0x8004, .execute=Chip8Instructions::add_vx_vy },
-  { .mask=0xF00F, .value=0x8005, .execute=Chip8Instructions::sub_vx_vy },
-  { .mask=0xF00F, .value=0x8006, .execute=Chip8Instructions::shr_vx_vy },
-  { .mask=0xF00F, .value=0x8007, .execute=Chip8Instructions::rsb_vx_vy },
-  { .mask=0xF00F, .value=0x800E, .execute=Chip8Instructions::shl_vx_vy },
-  { .mask=0xF000, .value=0x9000, .execute=Chip8Instructions::sne_vx_vy },
-  { .mask=0xF000, .value=0xA000, .execute=Chip8Instructions::mov_i_nnn },
-  { .mask=0xF000, .value=0xB000, .execute=Chip8Instructions::jmp_vx_nnn },
-  { .mask=0xF000, .value=0xC000, .execute=Chip8Instructions::rnd_vx_nn },
-  { .mask=0xF000, .value=0xD000, .execute=Chip8Instructions::drw },
-  { .mask=0xF0FF, .value=0xE09E, .execute=Chip8Instructions::spr_vx },
-  { .mask=0xF0FF, .value=0xE0A1, .execute=Chip8Instructions::sup_vx },
-  { .mask=0xF0FF, .value=0xF007, .execute=Chip8Instructions::mov_vx_dt },
-  { .mask=0xF0FF, .value=0xF00A, .execute=Chip8Instructions::wait_mov_vx_key },
-  { .mask=0xF0FF, .value=0xF015, .execute=Chip8Instructions::mov_dt_vx },
-  { .mask=0xF0FF, .value=0xF018, .execute=Chip8Instructions::mov_st_vx },
-  { .mask=0xF0FF, .value=0xF01E, .execute=Chip8Instructions::add_i_vx },
-  { .mask=0xF0FF, .value=0xF029, .execute=Chip8Instructions::mov_i_font_vx },
-  { .mask=0xF0FF, .value=0xF030, .execute=Chip8Instructions::mov_i_bfont_vx },
-  { .mask=0xF0FF, .value=0xF033, .execute=Chip8Instructions::mov_i_bcd_vx },
-  { .mask=0xF0FF, .value=0xF055, .execute=Chip8Instructions::mov_i_vx },
-  { .mask=0xF0FF, .value=0xF065, .execute=Chip8Instructions::mov_vx_i }
-}};
+#include "Chip8InstructionSet.h"
 
 class Chip8Emulator
 {
+private:
+  static constexpr std::array<InstructionSet::OpcodeFunction, 40> DECODE_TABLE
+  {
+    InstructionSet::opcode_high_nibble_low_byte(0x0, 0xE0, &Chip8System::cls),
+    InstructionSet::opcode_high_nibble_low_byte(0x0, 0xEE, &Chip8System::ret),
+    InstructionSet::opcode_high_nibble_low_byte(0x0, 0xFB, &Chip8System::sc_right),
+    InstructionSet::opcode_high_nibble_low_byte(0x0, 0xFC, &Chip8System::sc_left),
+    InstructionSet::opcode_high_nibble_low_byte(0x0, 0xFD, &Chip8System::exit),
+    InstructionSet::opcode_high_nibble_low_byte(0x0, 0xFE, &Chip8System::lores),
+    InstructionSet::opcode_high_nibble_low_byte(0x0, 0xFF, &Chip8System::hires),
+    InstructionSet::opcode_high_nibble         (0x1,       &Chip8System::jmp),
+    InstructionSet::opcode_high_nibble         (0x2,       &Chip8System::call),
+    InstructionSet::opcode_high_nibble         (0x3,       &Chip8System::seq_vx_nn),
+    InstructionSet::opcode_high_nibble         (0x4,       &Chip8System::sne_vx_nn),
+    InstructionSet::opcode_high_nibble         (0x5,       &Chip8System::seq_vx_vy),
+    InstructionSet::opcode_high_nibble         (0x6,       &Chip8System::mov_vx_nn),
+    InstructionSet::opcode_high_nibble         (0x7,       &Chip8System::add_vx_nn),
+    InstructionSet::opcode_high_low_nibble     (0x8, 0x0,  &Chip8System::mov_vx_vy),
+    InstructionSet::opcode_high_low_nibble     (0x8, 0x1,  &Chip8System::or_vx_vy),
+    InstructionSet::opcode_high_low_nibble     (0x8, 0x2,  &Chip8System::and_vx_vy),
+    InstructionSet::opcode_high_low_nibble     (0x8, 0x3,  &Chip8System::xor_vx_vy),
+    InstructionSet::opcode_high_low_nibble     (0x8, 0x4,  &Chip8System::add_vx_vy),
+    InstructionSet::opcode_high_low_nibble     (0x8, 0x5,  &Chip8System::sub_vx_vy),
+    InstructionSet::opcode_high_low_nibble     (0x8, 0x6,  &Chip8System::shr_vx_vy),
+    InstructionSet::opcode_high_low_nibble     (0x8, 0x7,  &Chip8System::rsb_vx_vy),
+    InstructionSet::opcode_high_low_nibble     (0x8, 0xE,  &Chip8System::shl_vx_vy),
+    InstructionSet::opcode_high_nibble         (0x9,       &Chip8System::sne_vx_vy),
+    InstructionSet::opcode_high_nibble         (0xA,       &Chip8System::mov_i_nnn),
+    InstructionSet::opcode_high_nibble         (0xB,       &Chip8System::jmp_vx_nnn),
+    InstructionSet::opcode_high_nibble         (0xC,       &Chip8System::rnd_vx_nn),
+    InstructionSet::opcode_high_nibble         (0xD,       &Chip8System::drw),
+    InstructionSet::opcode_high_nibble_low_byte(0xE, 0x9E, &Chip8System::spr_vx),
+    InstructionSet::opcode_high_nibble_low_byte(0xE, 0xA1, &Chip8System::sup_vx),
+    InstructionSet::opcode_high_nibble_low_byte(0xF, 0x07, &Chip8System::mov_vx_dt),
+    InstructionSet::opcode_high_nibble_low_byte(0xF, 0x0A, &Chip8System::wait_mov_vx_key),
+    InstructionSet::opcode_high_nibble_low_byte(0xF, 0x15, &Chip8System::mov_dt_vx),
+    InstructionSet::opcode_high_nibble_low_byte(0xF, 0x18, &Chip8System::mov_st_vx),
+    InstructionSet::opcode_high_nibble_low_byte(0xF, 0x1E, &Chip8System::add_i_vx),
+    InstructionSet::opcode_high_nibble_low_byte(0xF, 0x29, &Chip8System::mov_i_font_vx),
+    InstructionSet::opcode_high_nibble_low_byte(0xF, 0x30, &Chip8System::mov_i_bfont_vx),
+    InstructionSet::opcode_high_nibble_low_byte(0xF, 0x33, &Chip8System::mov_i_bcd_vx),
+    InstructionSet::opcode_high_nibble_low_byte(0xF, 0x55, &Chip8System::mov_i_vx),
+    InstructionSet::opcode_high_nibble_low_byte(0xF, 0x65, &Chip8System::mov_vx_i),
+  };
+
 public:
   Chip8Emulator();
   
@@ -77,17 +64,17 @@ public:
 
   void decodeInstruction(Instruction instruction);
 
-  void loadRom(std::string &filename);
+  void loadRom(std::string_view filename);
 
   bool updateTimers() noexcept;
 
   [[nodiscard]] Instruction getCurrentInstruction() const;
 
-  auto cycle() -> int;
+  int cycle();
 };
 
 // normal font, size is 5 x F = 50
-static constexpr std::array<std::uint8_t, 0x50> FONT = {
+static constexpr std::array<std::uint8_t, 0x50> FONT {
   0xF0, 0x90, 0x90, 0x90, 0xF0,  // 0
   0x20, 0x60, 0x20, 0x20, 0x70,  // 1
   0xF0, 0x10, 0xF0, 0x80, 0xF0,  // 2
@@ -107,7 +94,7 @@ static constexpr std::array<std::uint8_t, 0x50> FONT = {
 };
 
 // big font, size is A x F = A0
-static constexpr std::array<std::uint8_t, 0xA0> BIG_FONT = {
+static constexpr std::array<std::uint8_t, 0xA0> BIG_FONT {
   0xFF, 0xFF, 0xC3, 0xC3, 0xC3, 0xC3, 0xC3, 0xC3, 0xFF, 0xFF, // 0
   0x18, 0x78, 0x78, 0x18, 0x18, 0x18, 0x18, 0x18, 0xFF, 0xFF, // 1
   0xFF, 0xFF, 0x03, 0x03, 0xFF, 0xFF, 0xC0, 0xC0, 0xFF, 0xFF, // 2
