@@ -15,6 +15,7 @@ set(SOURCES chip8/config.cpp
         window/beeper.cpp
         window/window.cpp
         chip8/fonts.h
+        window/sdl_wrapper.h
 )
 
 add_library(chip8-lib ${SOURCES})

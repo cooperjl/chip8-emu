@@ -10,22 +10,24 @@
 #include "beeper.h"
 #include "chip8/emulator.h"
 
-Window::Window(std::string_view const filename) {
-    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
-        throw std::runtime_error{std::string("Error: failed to initialise SDL: ") + SDL_GetError()};
+Window::Window(std::string_view const filename) : sdl_context{SDL_INIT_VIDEO | SDL_INIT_AUDIO} {
+    window = SDLWrappedPtr<SDL_Window, SDL_DestroyWindow>{
+        SDL_CreateWindow(WINDOW_NAME.c_str(), DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT,
+                         SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE)};
+
+    if (!window) {
+        throw std::runtime_error{std::string("Error: failed to create window: ") + SDL_GetError()};
     }
 
-    constexpr std::uint16_t DEFAULT_WINDOW_WIDTH{640};
-    constexpr std::uint16_t DEFAULT_WINDOW_HEIGHT{320};
+    renderer =
+        SDLWrappedPtr<SDL_Renderer, SDL_DestroyRenderer>{SDL_CreateRenderer(window.get(), nullptr)};
 
-    if (!SDL_CreateWindowAndRenderer("CHIP-8 Emulator", DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT,
-                                     SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE, &window,
-                                     &renderer)) {
-        throw std::runtime_error{std::string("Error: failed to create window and renderer: ") +
+    if (!renderer) {
+        throw std::runtime_error{std::string("Error: failed to create renderer: ") +
                                  SDL_GetError()};
     }
 
-    SDL_SetRenderLogicalPresentation(renderer, Chip8::System::LORES_WIDTH,
+    SDL_SetRenderLogicalPresentation(renderer.get(), Chip8::System::LORES_WIDTH,
                                      Chip8::System::LORES_HEIGHT,
                                      SDL_LOGICAL_PRESENTATION_INTEGER_SCALE);
 
@@ -68,23 +70,24 @@ void Window::poll_events() {
 }
 
 void Window::clear() const {
-    SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
-    SDL_RenderClear(renderer);
+    SDL_SetRenderDrawColor(renderer.get(), 0x00, 0x00, 0x00, 0xFF);
+    SDL_RenderClear(renderer.get());
 }
 
 void Window::draw() const {
-    SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+    SDL_SetRenderDrawColor(renderer.get(), 0xFF, 0xFF, 0xFF, 0xFF);
 
     for (size_t x{0}; x < chip8_emulator->system.current_width; ++x) {
         for (size_t y{0}; y < chip8_emulator->system.current_height; ++y) {
-            if (chip8_emulator->system.display.at((y * chip8_emulator->system.current_width) + x) == 1) {
-                SDL_RenderPoint(renderer, x, y);
+            if (chip8_emulator->system.display.at((y * chip8_emulator->system.current_width) + x) ==
+                1) {
+                SDL_RenderPoint(renderer.get(), x, y);
             }
         }
     }
 }
 
-void Window::present() const { SDL_RenderPresent(renderer); }
+void Window::present() const { SDL_RenderPresent(renderer.get()); }
 
 void Window::init_callback() const {
     chip8_emulator->system.set_callback([this](Chip8::CallbackType const callback_type) {
@@ -97,12 +100,12 @@ void Window::init_callback() const {
             break;
         }
         case Chip8::CallbackType::CHIP8_CALLBACK_HIRES:
-            SDL_SetRenderLogicalPresentation(renderer, Chip8::System::HIRES_WIDTH,
+            SDL_SetRenderLogicalPresentation(renderer.get(), Chip8::System::HIRES_WIDTH,
                                              Chip8::System::HIRES_HEIGHT,
                                              SDL_LOGICAL_PRESENTATION_INTEGER_SCALE);
             break;
         case Chip8::CallbackType::CHIP8_CALLBACK_LORES:
-            SDL_SetRenderLogicalPresentation(renderer, Chip8::System::LORES_WIDTH,
+            SDL_SetRenderLogicalPresentation(renderer.get(), Chip8::System::LORES_WIDTH,
                                              Chip8::System::LORES_HEIGHT,
                                              SDL_LOGICAL_PRESENTATION_INTEGER_SCALE);
             break;
@@ -148,14 +151,4 @@ void Window::main_loop() {
             fps_time = current_time;
         }
     }
-}
-
-Window::~Window() {
-    beeper.reset();
-    chip8_emulator.reset();
-
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-
-    SDL_Quit();
 }

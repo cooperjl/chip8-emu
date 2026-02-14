@@ -1,19 +1,27 @@
 #ifndef CHIP8_WINDOW_H
 #define CHIP8_WINDOW_H
 
-#include <SDL3/SDL.h>
-
 #include <cstdint>
 #include <memory>
 #include <unordered_map>
 
-#include "../chip8/emulator.h"
+#include <SDL3/SDL.h>
+
+#include "sdl_wrapper.h"
+#include "chip8/emulator.h"
 #include "beeper.h"
 
 class Window {
 private:
-    SDL_Window* window{nullptr};
-    SDL_Renderer* renderer{nullptr};
+    static constexpr std::uint16_t DEFAULT_WINDOW_WIDTH{640};
+    static constexpr std::uint16_t DEFAULT_WINDOW_HEIGHT{320};
+
+    static constexpr std::string WINDOW_NAME{"CHIP-8 Emulator"};
+
+    SDLContext sdl_context;
+
+    SDLWrappedPtr<SDL_Window, SDL_DestroyWindow> window;
+    SDLWrappedPtr<SDL_Renderer, SDL_DestroyRenderer> renderer;
 
     std::unique_ptr<Beeper> beeper;
     std::unique_ptr<Chip8::Emulator> chip8_emulator;
@@ -31,8 +39,6 @@ public:
     void clear() const;
     void draw() const;
     void present() const;
-
-    ~Window();
 };
 
 static std::unordered_map<std::uint8_t, std::uint8_t> const KEYMAP{
