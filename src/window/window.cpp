@@ -1,4 +1,4 @@
-#include "Window.h"
+#include "window.h"
 
 #include <chrono>
 #include <memory>
@@ -7,38 +7,44 @@
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_render.h>
 
-#include "Beeper.h"
-#include "Chip8Emulator.h"
+#include "beeper.h"
+#include "chip8/emulator.h"
 
 Window::Window(std::string_view const filename) {
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
         throw std::runtime_error{std::string("Error: failed to initialise SDL: ") + SDL_GetError()};
     }
 
-    if (!SDL_CreateWindowAndRenderer("CHIP-8", 640, 320, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE,
-                                     &window, &renderer)) {
+    constexpr std::uint16_t DEFAULT_WINDOW_WIDTH{640};
+    constexpr std::uint16_t DEFAULT_WINDOW_HEIGHT{320};
+
+    if (!SDL_CreateWindowAndRenderer("CHIP-8 Emulator", DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT,
+                                     SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE, &window,
+                                     &renderer)) {
         throw std::runtime_error{std::string("Error: failed to create window and renderer: ") +
                                  SDL_GetError()};
     }
 
-    SDL_SetRenderLogicalPresentation(renderer, 64, 32, SDL_LOGICAL_PRESENTATION_INTEGER_SCALE);
+    SDL_SetRenderLogicalPresentation(renderer, Chip8::System::LORES_WIDTH,
+                                     Chip8::System::LORES_HEIGHT,
+                                     SDL_LOGICAL_PRESENTATION_INTEGER_SCALE);
 
     beeper = std::make_unique<Beeper>();
 
-    chip8system = std::make_unique<Chip8Emulator>();
+    chip8_emulator = std::make_unique<Chip8::Emulator>();
     init_callback();
-    chip8system->loadRom(filename);
+    chip8_emulator->loadRom(filename);
 }
 
 void Window::parse_keymap(std::uint8_t const key, std::uint8_t const status) const {
     auto find_key{KEYMAP.find(key)};
     if (find_key != KEYMAP.end()) {
         // For waiting
-        if (chip8system->system.waiting && status == 0x0) {
-            chip8system->system.key_released = find_key->second;
+        if (chip8_emulator->system.waiting && status == 0x0) {
+            chip8_emulator->system.key_released = find_key->second;
         }
 
-        chip8system->system.keys.at(find_key->second) = status;
+        chip8_emulator->system.keys.at(find_key->second) = status;
     }
 }
 
@@ -69,9 +75,9 @@ void Window::clear() const {
 void Window::draw() const {
     SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
 
-    for (size_t x{0}; x < chip8system->system.current_width; ++x) {
-        for (size_t y{0}; y < chip8system->system.current_height; ++y) {
-            if (chip8system->system.display.at((y * chip8system->system.current_width) + x) == 1) {
+    for (size_t x{0}; x < chip8_emulator->system.current_width; ++x) {
+        for (size_t y{0}; y < chip8_emulator->system.current_height; ++y) {
+            if (chip8_emulator->system.display.at((y * chip8_emulator->system.current_width) + x) == 1) {
                 SDL_RenderPoint(renderer, x, y);
             }
         }
@@ -81,21 +87,23 @@ void Window::draw() const {
 void Window::present() const { SDL_RenderPresent(renderer); }
 
 void Window::init_callback() const {
-    chip8system->system.set_callback([this](CallbackType const callback_type) {
+    chip8_emulator->system.set_callback([this](Chip8::CallbackType const callback_type) {
         switch (callback_type) {
-        case CallbackType::CHIP8_CALLBACK_EXIT: {
+        case Chip8::CallbackType::CHIP8_CALLBACK_EXIT: {
             // Call a quit event to ensure all quit handling is done in the same place.
             SDL_Event event{};
             event.type = SDL_EVENT_QUIT;
             SDL_PushEvent(&event);
             break;
         }
-        case CallbackType::CHIP8_CALLBACK_HIRES:
-            SDL_SetRenderLogicalPresentation(renderer, 128, 64,
+        case Chip8::CallbackType::CHIP8_CALLBACK_HIRES:
+            SDL_SetRenderLogicalPresentation(renderer, Chip8::System::HIRES_WIDTH,
+                                             Chip8::System::HIRES_HEIGHT,
                                              SDL_LOGICAL_PRESENTATION_INTEGER_SCALE);
             break;
-        case CallbackType::CHIP8_CALLBACK_LORES:
-            SDL_SetRenderLogicalPresentation(renderer, 64, 32,
+        case Chip8::CallbackType::CHIP8_CALLBACK_LORES:
+            SDL_SetRenderLogicalPresentation(renderer, Chip8::System::LORES_WIDTH,
+                                             Chip8::System::LORES_HEIGHT,
                                              SDL_LOGICAL_PRESENTATION_INTEGER_SCALE);
             break;
         }
@@ -122,13 +130,13 @@ void Window::main_loop() {
             round<system_clock::duration>(duration<double>{1.0 / (FPS * TICK_RATE)})};
 
         if (current_time > cycle_time + CYCLE_STEP) {
-            chip8system->cycle();
+            chip8_emulator->cycle();
 
             cycle_time = current_time;
         }
 
         if (current_time > fps_time + FPS_STEP) {
-            if (chip8system->updateTimers()) {
+            if (chip8_emulator->updateTimers()) {
                 beeper->beep();
             }
 
@@ -144,7 +152,7 @@ void Window::main_loop() {
 
 Window::~Window() {
     beeper.reset();
-    chip8system.reset();
+    chip8_emulator.reset();
 
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);

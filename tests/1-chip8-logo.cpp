@@ -2,8 +2,8 @@
 
 #include "doctest/doctest.h"
 
-#include "Chip8Emulator.h"
-#include "Window.h"
+#include "../src/chip8/emulator.h"
+#include "../src/window/window.h"
 
 // clang-format off
 constexpr std::array<std::uint8_t, 2048> EXPECTED_DISPLAY{
@@ -42,7 +42,7 @@ constexpr std::array<std::uint8_t, 2048> EXPECTED_DISPLAY{
 };
 // clang-format on
 
-static void output_display(Chip8System const& system) {
+static void output_display(Chip8::System const& system) {
     for (std::size_t i{0}; i < 32; ++i) {
         for (std::size_t j{0}; j < 64; ++j) {
             std::cout << static_cast<unsigned>(system.display.at((64 * i) + j)) << ",";
@@ -56,8 +56,8 @@ TEST_CASE("Running the 1-chip8-logo.ch8 test rom results in the correct renderin
     // TODO: Find a proper way to do this
     std::string filename("../../tests/test-roms/1-chip8-logo.ch8");
 
-    Chip8Emulator chip8Emulator{};
-    chip8Emulator.loadRom(filename);
+    Chip8::Emulator emulator{};
+    emulator.loadRom(filename);
 
     std::uint8_t timeout{0};
 
@@ -65,11 +65,11 @@ TEST_CASE("Running the 1-chip8-logo.ch8 test rom results in the correct renderin
     // so we expect the display to be finished rendering at this point.
     // Additionally, use an arbitrary timeout in case the execution
     // does not make it to this point.
-    while (chip8Emulator.system.program_counter != 0x024E && timeout != 100) {
-        chip8Emulator.cycle();
+    while (emulator.system.program_counter != 0x024E && timeout != 100) {
+        emulator.cycle();
         ++timeout;
     }
 
     CHECK(std::equal(EXPECTED_DISPLAY.begin(), EXPECTED_DISPLAY.end(),
-                     chip8Emulator.system.display.begin()));
+                     emulator.system.display.begin()));
 }

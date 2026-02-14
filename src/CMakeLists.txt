@@ -9,11 +9,12 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(SDL3)
 
-set(SOURCES Config.cpp
-        Chip8System.cpp
-        Chip8Emulator.cpp
-        Beeper.cpp
-        Window.cpp
+set(SOURCES chip8/config.cpp
+        chip8/system.cpp
+        chip8/emulator.cpp
+        window/beeper.cpp
+        window/window.cpp
+        chip8/fonts.h
 )
 
 add_library(chip8-lib ${SOURCES})

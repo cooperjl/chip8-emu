@@ -1,22 +1,23 @@
 #ifndef CHIP8_SYSTEM_H
 #define CHIP8_SYSTEM_H
 
-#include "Instruction.h"
+#include "instruction.h"
 
 #include <array>
 #include <functional>
 #include <stack>
 #include <vector>
 
+namespace Chip8 {
 enum class CallbackType : std::uint8_t {
     CHIP8_CALLBACK_EXIT,
     CHIP8_CALLBACK_LORES,
     CHIP8_CALLBACK_HIRES,
 };
 
-class Chip8System {
+class System {
 public:
-    Chip8System() = default;
+    System() = default;
 
     static constexpr std::uint16_t MEMORY_SIZE{4096};
     static constexpr std::uint8_t REGISTER_COUNT{16};
@@ -95,5 +96,5 @@ public:
     void mov_i_vx(Instruction instruction) noexcept;
     void mov_vx_i(Instruction instruction) noexcept;
 };
-
+} // namespace Chip8
 #endif // CHIP8_SYSTEM_H

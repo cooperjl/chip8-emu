@@ -1,5 +1,5 @@
-#ifndef BEEPER_H
-#define BEEPER_H
+#ifndef CHIP8_BEEPER_H
+#define CHIP8_BEEPER_H
 
 #include <SDL3/SDL_audio.h>
 
@@ -27,5 +27,4 @@ public:
 
     ~Beeper();
 };
-
-#endif // BEEPER_H
+#endif // CHIP8_BEEPER_H

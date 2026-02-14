@@ -1,8 +1,9 @@
-#ifndef INSTRUCTION_H
-#define INSTRUCTION_H
+#ifndef CHIP8_INSTRUCTION_H
+#define CHIP8_INSTRUCTION_H
 
 #include <cstdint>
 
+namespace Chip8 {
 class Instruction {
     std::uint16_t data;
 
@@ -53,5 +54,5 @@ public:
         return (data & MASK);
     }
 };
-
-#endif // INSTRUCTION_H
+} // namespace Chip8
+#endif // CHIP8_INSTRUCTION_H

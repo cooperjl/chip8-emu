@@ -1,12 +1,13 @@
-#include "Chip8System.h"
-
-#include "Chip8Emulator.h"
-#include "Config.h"
-#include "Instruction.h"
+#include "system.h"
 
 #include <print>
 
-void Chip8System::sc_down(Instruction const instruction) noexcept {
+#include "config.h"
+#include "fonts.h"
+#include "instruction.h"
+
+namespace Chip8 {
+void System::sc_down(Instruction const instruction) noexcept {
     std::uint16_t const scroll_n{static_cast<std::uint16_t>(current_width * instruction.n())};
     // Remove pixels scrolled down off the bottom of the screen
     display.erase(display.end() - scroll_n, display.end());
@@ -14,14 +15,14 @@ void Chip8System::sc_down(Instruction const instruction) noexcept {
     display.insert(display.begin(), scroll_n, 0x0);
 }
 
-void Chip8System::cls(Instruction const instruction) noexcept { std::ranges::fill(display, 0x0); }
+void System::cls(Instruction const instruction) noexcept { std::ranges::fill(display, 0x0); }
 
-void Chip8System::ret(Instruction const instruction) noexcept {
+void System::ret(Instruction const instruction) noexcept {
     program_counter = stack.top();
     stack.pop();
 }
 
-void Chip8System::sc_right(Instruction const instruction) noexcept {
+void System::sc_right(Instruction const instruction) noexcept {
     auto iter{display.begin()};
     // Iterate row by row, performing scroll
     while (iter != display.end()) {
@@ -37,7 +38,7 @@ void Chip8System::sc_right(Instruction const instruction) noexcept {
         }
     }
 }
-void Chip8System::sc_left(Instruction const instruction) noexcept {
+void System::sc_left(Instruction const instruction) noexcept {
     auto iter{display.begin()};
     // Iterate row by row, performing scroll
     while (iter != display.end()) {
@@ -53,7 +54,7 @@ void Chip8System::sc_left(Instruction const instruction) noexcept {
         }
     }
 }
-void Chip8System::exit(Instruction const instruction) noexcept {
+void System::exit(Instruction const instruction) noexcept {
     if (callback_function) {
         callback_function(CallbackType::CHIP8_CALLBACK_EXIT);
     } else {
@@ -62,7 +63,7 @@ void Chip8System::exit(Instruction const instruction) noexcept {
             "Warning: callback not set: SUPER-CHIP exit instruction needs to modify window state");
     }
 }
-void Chip8System::lores(Instruction const instruction) noexcept {
+void System::lores(Instruction const instruction) noexcept {
     if (callback_function) {
         callback_function(CallbackType::CHIP8_CALLBACK_LORES);
     } else {
@@ -76,7 +77,7 @@ void Chip8System::lores(Instruction const instruction) noexcept {
     display.resize(static_cast<size_t>(current_width * current_height));
 }
 
-void Chip8System::hires(Instruction const instruction) noexcept {
+void System::hires(Instruction const instruction) noexcept {
     if (callback_function) {
         callback_function(CallbackType::CHIP8_CALLBACK_HIRES);
     } else {
@@ -90,67 +91,65 @@ void Chip8System::hires(Instruction const instruction) noexcept {
     display.resize(static_cast<size_t>(current_width * current_height));
 }
 
-void Chip8System::jmp(Instruction const instruction) noexcept {
-    program_counter = instruction.nnn();
-}
+void System::jmp(Instruction const instruction) noexcept { program_counter = instruction.nnn(); }
 
-void Chip8System::call(Instruction const instruction) noexcept {
+void System::call(Instruction const instruction) noexcept {
     stack.push(program_counter);
     program_counter = instruction.nnn();
 }
 
-void Chip8System::seq_vx_nn(Instruction const instruction) noexcept {
+void System::seq_vx_nn(Instruction const instruction) noexcept {
     if (registers.at(instruction.x()) == instruction.nn()) {
         program_counter += 2;
     }
 }
 
-void Chip8System::sne_vx_nn(Instruction const instruction) noexcept {
+void System::sne_vx_nn(Instruction const instruction) noexcept {
     if (registers.at(instruction.x()) != instruction.nn()) {
         program_counter += 2;
     }
 }
 
-void Chip8System::seq_vx_vy(Instruction const instruction) noexcept {
+void System::seq_vx_vy(Instruction const instruction) noexcept {
     if (registers.at(instruction.x()) == registers.at(instruction.y())) {
         program_counter += 2;
     }
 }
 
-void Chip8System::mov_vx_nn(Instruction const instruction) noexcept {
+void System::mov_vx_nn(Instruction const instruction) noexcept {
     registers.at(instruction.x()) = instruction.nn();
 }
 
-void Chip8System::add_vx_nn(Instruction const instruction) noexcept {
+void System::add_vx_nn(Instruction const instruction) noexcept {
     registers.at(instruction.x()) += instruction.nn();
 }
 
-void Chip8System::mov_vx_vy(Instruction const instruction) noexcept {
+void System::mov_vx_vy(Instruction const instruction) noexcept {
     registers.at(instruction.x()) = registers.at(instruction.y());
 }
 
-void Chip8System::or_vx_vy(Instruction const instruction) noexcept {
+void System::or_vx_vy(Instruction const instruction) noexcept {
     registers.at(instruction.x()) |= registers.at(instruction.y());
 
     // quirk
     registers.at(FLAG_REGISTER_IDX) = 0;
 }
 
-void Chip8System::and_vx_vy(Instruction const instruction) noexcept {
+void System::and_vx_vy(Instruction const instruction) noexcept {
     registers.at(instruction.x()) &= registers.at(instruction.y());
 
     // quirk
     registers.at(FLAG_REGISTER_IDX) = 0;
 }
 
-void Chip8System::xor_vx_vy(Instruction const instruction) noexcept {
+void System::xor_vx_vy(Instruction const instruction) noexcept {
     registers.at(instruction.x()) ^= registers.at(instruction.y());
 
     // quirk
     registers.at(FLAG_REGISTER_IDX) = 0;
 }
 
-void Chip8System::add_vx_vy(Instruction const instruction) noexcept {
+void System::add_vx_vy(Instruction const instruction) noexcept {
     std::uint8_t const register_x{registers.at(instruction.x())};
     std::uint8_t const register_y{registers.at(instruction.y())};
 
@@ -160,7 +159,7 @@ void Chip8System::add_vx_vy(Instruction const instruction) noexcept {
     registers.at(FLAG_REGISTER_IDX) = (register_x > 255 - register_y) ? 1 : 0;
 }
 
-void Chip8System::sub_vx_vy(Instruction const instruction) noexcept {
+void System::sub_vx_vy(Instruction const instruction) noexcept {
     std::uint8_t const register_x{registers.at(instruction.x())};
     std::uint8_t const register_y{registers.at(instruction.y())};
 
@@ -169,7 +168,7 @@ void Chip8System::sub_vx_vy(Instruction const instruction) noexcept {
     // Set flag register to the borrow value
     registers.at(FLAG_REGISTER_IDX) = (register_x >= register_y) ? 1 : 0;
 }
-void Chip8System::shr_vx_vy(Instruction const instruction) noexcept {
+void System::shr_vx_vy(Instruction const instruction) noexcept {
     if (!Config::shift_quirk) {
         registers.at(instruction.x()) = registers.at(instruction.y());
     }
@@ -180,7 +179,7 @@ void Chip8System::shr_vx_vy(Instruction const instruction) noexcept {
     registers.at(FLAG_REGISTER_IDX) = (register_x & 0b00000001);
 }
 
-void Chip8System::rsb_vx_vy(Instruction const instruction) noexcept {
+void System::rsb_vx_vy(Instruction const instruction) noexcept {
     std::uint8_t const register_x{registers.at(instruction.x())};
     std::uint8_t const register_y{registers.at(instruction.y())};
 
@@ -190,28 +189,27 @@ void Chip8System::rsb_vx_vy(Instruction const instruction) noexcept {
     registers.at(FLAG_REGISTER_IDX) = (register_y >= register_x) ? 1 : 0;
 }
 
-void Chip8System::shl_vx_vy(Instruction const instruction) noexcept {
+void System::shl_vx_vy(Instruction const instruction) noexcept {
     if (!Config::shift_quirk) {
         registers.at(instruction.x()) = registers.at(instruction.y());
     }
 
     std::uint8_t const register_x{registers.at(instruction.x())};
 
-    registers.at(instruction.x()) <<= 1; // Perform shift
-    registers.at(FLAG_REGISTER_IDX) =
-        register_x >> 7; // Set flag register to the bit shifted out
+    registers.at(instruction.x()) <<= 1;               // Perform shift
+    registers.at(FLAG_REGISTER_IDX) = register_x >> 7; // Set flag register to the bit shifted out
 }
 
-void Chip8System::sne_vx_vy(Instruction const instruction) noexcept {
+void System::sne_vx_vy(Instruction const instruction) noexcept {
     if (registers.at(instruction.x()) != registers.at(instruction.y())) {
         program_counter += 2;
     }
 }
 
-void Chip8System::mov_i_nnn(Instruction const instruction) noexcept {
+void System::mov_i_nnn(Instruction const instruction) noexcept {
     index_register = instruction.nnn();
 }
-void Chip8System::jmp_vx_nnn(Instruction const instruction) noexcept {
+void System::jmp_vx_nnn(Instruction const instruction) noexcept {
     if (Config::jump_quirk) {
         program_counter = instruction.nnn() + registers.at(instruction.x());
     } else {
@@ -219,11 +217,11 @@ void Chip8System::jmp_vx_nnn(Instruction const instruction) noexcept {
     }
 }
 
-void Chip8System::rnd_vx_nn(Instruction const instruction) noexcept {
+void System::rnd_vx_nn(Instruction const instruction) noexcept {
     // registers.at(instruction.x()) = dist(rng) & instruction.nn();
 }
 
-void Chip8System::drw(Instruction const instruction) noexcept {
+void System::drw(Instruction const instruction) noexcept {
     std::uint8_t const register_x{
         static_cast<std::uint8_t>(registers.at(instruction.x()) % current_width)};
     std::uint8_t const register_y{
@@ -260,7 +258,7 @@ void Chip8System::drw(Instruction const instruction) noexcept {
     }
 }
 
-void Chip8System::spr_vx(Instruction const instruction) noexcept {
+void System::spr_vx(Instruction const instruction) noexcept {
     std::uint8_t const register_x{registers.at(instruction.x())};
 
     if (register_x < keys.size() && keys.at(register_x) == 0x1) {
@@ -268,7 +266,7 @@ void Chip8System::spr_vx(Instruction const instruction) noexcept {
     }
 }
 
-void Chip8System::sup_vx(Instruction const instruction) noexcept {
+void System::sup_vx(Instruction const instruction) noexcept {
     std::uint8_t const register_x{registers.at(instruction.x())};
 
     if (register_x < keys.size() && keys.at(register_x) == 0x0) {
@@ -276,11 +274,11 @@ void Chip8System::sup_vx(Instruction const instruction) noexcept {
     }
 }
 
-void Chip8System::mov_vx_dt(Instruction const instruction) noexcept {
+void System::mov_vx_dt(Instruction const instruction) noexcept {
     registers.at(instruction.x()) = delay_timer;
 }
 
-void Chip8System::wait_mov_vx_key(Instruction const instruction) noexcept {
+void System::wait_mov_vx_key(Instruction const instruction) noexcept {
     if (key_released == 0xFF) {
         waiting = true;
         program_counter -= 2;
@@ -291,35 +289,35 @@ void Chip8System::wait_mov_vx_key(Instruction const instruction) noexcept {
     }
 }
 
-void Chip8System::mov_dt_vx(Instruction const instruction) noexcept {
+void System::mov_dt_vx(Instruction const instruction) noexcept {
     delay_timer = registers.at(instruction.x());
 }
 
-void Chip8System::mov_st_vx(Instruction const instruction) noexcept {
+void System::mov_st_vx(Instruction const instruction) noexcept {
     sound_timer = registers.at(instruction.x());
 }
 
-void Chip8System::add_i_vx(Instruction const instruction) noexcept {
+void System::add_i_vx(Instruction const instruction) noexcept {
     index_register += registers.at(instruction.x());
 }
 
-void Chip8System::mov_i_font_vx(Instruction const instruction) noexcept {
+void System::mov_i_font_vx(Instruction const instruction) noexcept {
     // 5 bytes per character
     index_register = (registers.at(instruction.x()) * 0x5);
 }
 
-void Chip8System::mov_i_bfont_vx(Instruction const instruction) noexcept {
+void System::mov_i_bfont_vx(Instruction const instruction) noexcept {
     // A bytes per character, plus offset from FONT size
     index_register = (registers.at(instruction.x()) * 0xA) + FONT.size();
 }
 
-void Chip8System::mov_i_bcd_vx(Instruction const instruction) noexcept {
+void System::mov_i_bcd_vx(Instruction const instruction) noexcept {
     memory.at(index_register) = registers.at(instruction.x()) / 100;
     memory.at(index_register + 1) = (registers.at(instruction.x()) / 10) % 10;
     memory.at(index_register + 2) = registers.at(instruction.x()) % 10;
 }
 
-void Chip8System::mov_i_vx(Instruction const instruction) noexcept {
+void System::mov_i_vx(Instruction const instruction) noexcept {
     for (size_t idx{0}; idx <= instruction.x(); idx++) {
         memory.at(index_register + idx) = registers.at(idx);
     }
@@ -329,7 +327,7 @@ void Chip8System::mov_i_vx(Instruction const instruction) noexcept {
     }
 }
 
-void Chip8System::mov_vx_i(Instruction const instruction) noexcept {
+void System::mov_vx_i(Instruction const instruction) noexcept {
     for (size_t idx{0}; idx <= instruction.x(); idx++) {
         registers.at(idx) = memory.at(index_register + idx);
     }
@@ -338,3 +336,4 @@ void Chip8System::mov_vx_i(Instruction const instruction) noexcept {
         index_register = instruction.x() + 1;
     }
 }
+} // namespace Chip8

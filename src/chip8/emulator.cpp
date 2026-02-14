@@ -1,6 +1,4 @@
-#include "Chip8Emulator.h"
-
-#include "Chip8InstructionSet.h"
+#include "emulator.h"
 
 #include <algorithm>
 #include <array>
@@ -11,24 +9,27 @@
 #include <sstream>
 #include <stdexcept>
 
-#include "Chip8System.h"
-#include "Config.h"
-#include "Instruction.h"
+#include "config.h"
+#include "fonts.h"
+#include "instruction.h"
+#include "instruction_set.h"
+#include "system.h"
 
-Chip8Emulator::Chip8Emulator() {
+namespace Chip8 {
+Emulator::Emulator() {
     Config::load_super_chip();
 
     system.display.reserve(static_cast<size_t>(Config::max_width * Config::max_height));
     // Size to base size
-    system.display.resize(system.LORES_WIDTH * system.LORES_HEIGHT);
+    system.display.resize(System::LORES_WIDTH * System::LORES_HEIGHT);
     // read fonts in
     std::ranges::copy(FONT, std::begin(system.memory));
     std::ranges::copy(BIG_FONT, std::begin(system.memory) + FONT.size());
 }
 
 /** @brief Primary instruction decoding and execution function. */
-void Chip8Emulator::decodeInstruction(Instruction const instruction) {
-    for (auto const& row : DECODE_TABLE) {
+void Emulator::decodeInstruction(Instruction const instruction) {
+    for (auto const& row : InstructionSet::DECODE_TABLE) {
         if (row.matches(instruction)) {
             (system.*row.execute)(instruction);
             return;
@@ -41,7 +42,7 @@ void Chip8Emulator::decodeInstruction(Instruction const instruction) {
     throw std::runtime_error{errorString};
 }
 
-void Chip8Emulator::loadRom(std::string_view filename) {
+void Emulator::loadRom(std::string_view filename) {
     constexpr std::uint16_t START_IDX{0x200};
 
     if (std::ifstream file{filename.data(), std::ios::binary}) {
@@ -58,7 +59,7 @@ void Chip8Emulator::loadRom(std::string_view filename) {
     system.program_counter = START_IDX;
 }
 
-bool Chip8Emulator::updateTimers() noexcept {
+bool Emulator::updateTimers() noexcept {
     if (system.delay_timer > 0) {
         system.delay_timer--;
     }
@@ -68,15 +69,16 @@ bool Chip8Emulator::updateTimers() noexcept {
     return system.sound_timer > 0;
 }
 
-Instruction Chip8Emulator::getCurrentInstruction() const {
+Instruction Emulator::getCurrentInstruction() const {
     return Instruction{system.memory.at(system.program_counter),
                        system.memory.at(system.program_counter + 1)};
 }
 
-void Chip8Emulator::cycle() {
+void Emulator::cycle() {
     Instruction const instruction{getCurrentInstruction()};
 
     system.program_counter += 2;
 
     decodeInstruction(instruction);
 }
+} // namespace Chip8

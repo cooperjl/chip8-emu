@@ -1,9 +1,22 @@
-#include "Instruction.h"
+#include "../src/chip8/instruction.h"
 
 #include <algorithm>
 
-#include "Chip8Emulator.h"
+#include "../src/chip8/emulator.h"
 #include "doctest/doctest.h"
+
+// TEST_CASE("Decoding of all SUPER-CHIP instructions results in the expected modification of the "
+//           "state of the system") {
+//     SUBCASE("Decoding of a scroll down (0x00CN) instruction results in the execution of the system "
+//             "sc_down function") {
+//         Chip8::Emulator emulator{};
+//
+//         Chip8::Instruction const instruction{0x00C6};
+//
+//         emulator.decodeInstruction(instruction);
+//     }
+// }
+//
 /*
 TEST_CASE("testing the CLS instruction") {
   Chip8Two chip8system;

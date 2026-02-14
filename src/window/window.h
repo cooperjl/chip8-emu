@@ -1,5 +1,5 @@
-#ifndef WINDOW_H
-#define WINDOW_H
+#ifndef CHIP8_WINDOW_H
+#define CHIP8_WINDOW_H
 
 #include <SDL3/SDL.h>
 
@@ -7,8 +7,8 @@
 #include <memory>
 #include <unordered_map>
 
-#include "Beeper.h"
-#include "Chip8Emulator.h"
+#include "../chip8/emulator.h"
+#include "beeper.h"
 
 class Window {
 private:
@@ -16,7 +16,7 @@ private:
     SDL_Renderer* renderer{nullptr};
 
     std::unique_ptr<Beeper> beeper;
-    std::unique_ptr<Chip8Emulator> chip8system;
+    std::unique_ptr<Chip8::Emulator> chip8_emulator;
 
     void parse_keymap(std::uint8_t key, std::uint8_t status) const;
 
@@ -53,5 +53,4 @@ static std::unordered_map<std::uint8_t, std::uint8_t> const KEYMAP{
     {SDL_SCANCODE_C, 0xB},
     {SDL_SCANCODE_V, 0xF},
 };
-
-#endif // WINDOW_H
+#endif // CHIP8_WINDOW_H

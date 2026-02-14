@@ -2,7 +2,7 @@
 #include <filesystem>
 #include <print>
 
-#include "Window.h"
+#include "window/window.h"
 
 int main(int const argc, char const* const argv[]) {
     std::string filename{};

@@ -1,8 +1,9 @@
-#ifndef CONFIG_H
-#define CONFIG_H
+#ifndef CHIP8_CONFIG_H
+#define CHIP8_CONFIG_H
 
 #include <cstdint>
 
+namespace Chip8 {
 struct Config {
     static bool shift_quirk;
     static bool jump_quirk;
@@ -16,5 +17,5 @@ struct Config {
     static void load_super_chip();
     static void load_xo_chip();
 };
-
-#endif // CONFIG_H
+} // namespace Chip8
+#endif // CHIP8_CONFIG_H
