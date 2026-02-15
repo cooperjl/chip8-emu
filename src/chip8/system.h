@@ -5,6 +5,7 @@
 
 #include <array>
 #include <functional>
+#include <random>
 #include <stack>
 #include <vector>
 
@@ -16,6 +17,10 @@ enum class CallbackType : std::uint8_t {
 };
 
 class System {
+private:
+    std::mt19937 rng{std::random_device{}()};
+    std::uniform_int_distribution<std::uint8_t> dist{0};
+
 public:
     System() = default;
 

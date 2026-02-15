@@ -218,7 +218,7 @@ void System::jmp_vx_nnn(Instruction const instruction) noexcept {
 }
 
 void System::rnd_vx_nn(Instruction const instruction) noexcept {
-    // registers.at(instruction.x()) = dist(rng) & instruction.nn();
+    registers.at(instruction.x()) = dist(rng) & instruction.nn();
 }
 
 void System::drw(Instruction const instruction) noexcept {
