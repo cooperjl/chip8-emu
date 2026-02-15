@@ -36,10 +36,8 @@ void Emulator::decodeInstruction(Instruction const instruction) {
         }
     }
 
-    std::string const errorString{std::format(
-        "Error: Invalid (or unimplemented) chip8 instruction: 0x{:04X}", instruction.raw_data())};
-
-    throw std::runtime_error{errorString};
+    std::println(stderr, "Error: Invalid (or unimplemented) CHIP-8 instruction: 0x{:04X}",
+                 instruction.raw_data());
 }
 
 void Emulator::loadRom(std::string_view filename) {
